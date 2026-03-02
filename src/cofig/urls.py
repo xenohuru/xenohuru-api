@@ -30,6 +30,12 @@ urlpatterns = [
     path('api/v1/regions/', include('app.regions.urls')),
     path('api/v1/attractions/', include('app.attractions.urls')),
     path('api/v1/weather/', include('app.weather.urls')),
+    path('api/v1/operators/', include('app.operators.urls')),
+    path('api/v1/partners/', include('app.partners.urls')),
+    path('api/v1/blog/', include('app.blog.urls')),
+    path('api/v1/media/', include('app.media.urls')),
+    path('api/v1/contributors/', include('app.contributors.urls')),
+    path('api/v1/feedback/', include('app.feedback.urls')),
 
     # API schema
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
