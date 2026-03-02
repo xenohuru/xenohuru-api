@@ -3,15 +3,21 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from django.core.cache import cache
+from django.shortcuts import get_object_or_404
+import math
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiExample, OpenApiResponse
-from .models import Attraction
+
+from .models import Attraction, EndemicSpecies, AttractionBoundary, Citation
 from .serializers import (
     AttractionListSerializer,
     AttractionDetailSerializer,
-    AttractionCreateUpdateSerializer
+    AttractionCreateUpdateSerializer,
+    EndemicSpeciesSerializer,
+    AttractionBoundarySerializer,
+    CitationSerializer,
 )
 
-BASE_QUERYSET = Attraction.objects.filter(is_active=True).select_related('region', 'created_by').prefetch_related('images', 'tips')
+BASE_QUERYSET = Attraction.objects.filter(is_active=True).select_related('region', 'created_by').prefetch_related('images', 'tips', 'endemic_species')
 
 
 @extend_schema(
@@ -258,4 +264,173 @@ def attractions_by_region(request):
 
     attractions = BASE_QUERYSET.filter(region__slug=region_slug)
     serializer = AttractionListSerializer(attractions, many=True)
+    return Response(serializer.data)
+
+
+@extend_schema(
+    tags=['Attractions'],
+    summary='Endemic species for an attraction',
+    description=(
+        'Returns all endemic species recorded at the given attraction.\n\n'
+        '**curl example:**\n'
+        '```bash\n'
+        'curl https://cf89615f228bb45cc805447510de80.pythonanywhere.com/api/v1/attractions/serengeti/endemic-species/\n'
+        '```'
+    ),
+    responses={
+        200: OpenApiResponse(response=EndemicSpeciesSerializer(many=True), description='Endemic species list.'),
+        404: OpenApiResponse(description='Attraction not found.'),
+    },
+)
+@api_view(['GET'])
+@permission_classes([IsAuthenticatedOrReadOnly])
+def endemic_species_list(request, slug):
+    try:
+        attraction = Attraction.objects.get(slug=slug, is_active=True)
+    except Attraction.DoesNotExist:
+        return Response({'error': 'Not found'}, status=status.HTTP_404_NOT_FOUND)
+    species = attraction.endemic_species.all()
+    serializer = EndemicSpeciesSerializer(species, many=True)
+    return Response(serializer.data)
+
+
+@extend_schema(
+    tags=['Attraction Boundaries'],
+    summary='Full boundary data for an attraction',
+    responses={200: OpenApiResponse(response=AttractionBoundarySerializer)}
+)
+@api_view(['GET'])
+@permission_classes([IsAuthenticatedOrReadOnly])
+def attraction_boundary(request, slug):
+    attraction = get_object_or_404(Attraction, slug=slug, is_active=True)
+    boundary = get_object_or_404(AttractionBoundary, attraction=attraction)
+    serializer = AttractionBoundarySerializer(boundary)
+    return Response(serializer.data)
+
+
+@extend_schema(
+    tags=['Attraction Boundaries'],
+    summary='Raw GeoJSON for map',
+)
+@api_view(['GET'])
+@permission_classes([IsAuthenticatedOrReadOnly])
+def attraction_boundary_geojson(request, slug):
+    attraction = get_object_or_404(Attraction, slug=slug, is_active=True)
+    boundary = get_object_or_404(AttractionBoundary, attraction=attraction)
+    return Response(boundary.geojson if boundary.geojson else {})
+
+
+@extend_schema(
+    tags=['Attraction Boundaries'],
+    summary='Find attractions containing a GPS point',
+    parameters=[
+        OpenApiParameter('lat', required=True, type=float),
+        OpenApiParameter('lng', required=True, type=float),
+    ],
+    responses={200: OpenApiResponse(response=AttractionListSerializer(many=True))}
+)
+@api_view(['GET'])
+@permission_classes([IsAuthenticatedOrReadOnly])
+def attractions_within(request):
+    lat = request.query_params.get('lat')
+    lng = request.query_params.get('lng')
+    if not lat or not lng:
+        return Response({'error': 'lat and lng required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+    try:
+        lat = float(lat)
+        lng = float(lng)
+    except ValueError:
+        return Response({'error': 'Invalid lat or lng'}, status=status.HTTP_400_BAD_REQUEST)
+
+    boundaries = AttractionBoundary.objects.filter(
+        bbox_south__lte=lat, bbox_north__gte=lat,
+        bbox_west__lte=lng, bbox_east__gte=lng
+    ).select_related('attraction')
+    
+    attractions = [b.attraction for b in boundaries if b.attraction.is_active]
+    serializer = AttractionListSerializer(attractions, many=True)
+    return Response(serializer.data)
+
+
+@extend_schema(
+    tags=['Attraction Boundaries'],
+    summary='Attractions within radius',
+    parameters=[
+        OpenApiParameter('lat', required=True, type=float),
+        OpenApiParameter('lng', required=True, type=float),
+        OpenApiParameter('radius', required=True, type=float, description='Radius in km'),
+    ],
+    responses={200: OpenApiResponse(response=AttractionListSerializer(many=True))}
+)
+@api_view(['GET'])
+@permission_classes([IsAuthenticatedOrReadOnly])
+def attractions_nearby(request):
+    lat = request.query_params.get('lat')
+    lng = request.query_params.get('lng')
+    radius = request.query_params.get('radius')
+    
+    if not all([lat, lng, radius]):
+        return Response({'error': 'lat, lng, and radius required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+    try:
+        lat = float(lat)
+        lng = float(lng)
+        radius = float(radius)
+    except ValueError:
+        return Response({'error': 'Invalid lat, lng, or radius'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    lat_deg_dist = radius / 111.0
+    lon_deg_dist = radius / (111.0 * math.cos(math.radians(lat)))
+    
+    attractions = Attraction.objects.filter(
+        is_active=True,
+        latitude__gte=lat - lat_deg_dist,
+        latitude__lte=lat + lat_deg_dist,
+        longitude__gte=lng - lon_deg_dist,
+        longitude__lte=lng + lon_deg_dist
+    )
+    
+    serializer = AttractionListSerializer(attractions, many=True)
+    return Response(serializer.data)
+
+
+@extend_schema(
+    tags=['Citations'],
+    summary='List all citations',
+    responses={200: OpenApiResponse(response=CitationSerializer(many=True))}
+)
+@api_view(['GET'])
+@permission_classes([IsAuthenticatedOrReadOnly])
+def citation_list(request):
+    citations = Citation.objects.all()
+    serializer = CitationSerializer(citations, many=True)
+    return Response(serializer.data)
+
+
+@extend_schema(
+    tags=['Citations'],
+    summary='Citations for attraction',
+    responses={200: OpenApiResponse(response=CitationSerializer(many=True))}
+)
+@api_view(['GET'])
+@permission_classes([IsAuthenticatedOrReadOnly])
+def attraction_citations(request, slug):
+    attraction = get_object_or_404(Attraction, slug=slug, is_active=True)
+    citations = attraction.citations.all()
+    serializer = CitationSerializer(citations, many=True)
+    return Response(serializer.data)
+
+
+@extend_schema(
+    tags=['Citations'],
+    summary='Citations for endemic species',
+    responses={200: OpenApiResponse(response=CitationSerializer(many=True))}
+)
+@api_view(['GET'])
+@permission_classes([IsAuthenticatedOrReadOnly])
+def endemic_species_citations(request, pk):
+    species = get_object_or_404(EndemicSpecies, pk=pk)
+    citations = species.citations.all()
+    serializer = CitationSerializer(citations, many=True)
     return Response(serializer.data)
