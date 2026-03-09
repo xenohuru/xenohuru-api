@@ -48,6 +48,7 @@ THIRD_PARTY_APPS = [
 ]
 CUSTOM_APPS = [
     # Add your custom apps here (e.g., 'myapp', etc.)
+    "app.core",
     "app.accounts",
     "app.attractions",
     "app.regions",
