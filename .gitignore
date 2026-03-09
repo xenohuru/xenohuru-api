@@ -2,7 +2,8 @@
 venv
 *.pyc
 __pycache__/
-db.sqlite3
+*.sqlite3
+*.db
 staticfiles/
 media/
 .DS_Store

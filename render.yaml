@@ -4,7 +4,7 @@ services:
     env: python
     region: frankfurt  # Closest free region to Tanzania
     plan: free
-    buildCommand: bash build.sh
+    buildCommand: bash src/build.sh
     startCommand: gunicorn --chdir src cofig.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 120
     healthCheckPath: /api/health/
     envVars:
