@@ -100,19 +100,14 @@ TEMPLATES = [
 WSGI_APPLICATION = 'cofig.wsgi.application'
 
 
-# Database — Supabase (PostgreSQL)
+# Database — SQLCipher encrypted SQLite (default for all environments)
+# Overridden to PostgreSQL when DATABASE_URL is set (future cloud upgrade)
+DB_ENCRYPTION_KEY = config('DB_ENCRYPTION_KEY', default='')
+
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': config('DATABASE_NAME', default='postgres'),
-        'USER': config('DATABASE_USER', default='postgres'),
-        'PASSWORD': config('DATABASE_PASSWORD', default=''),
-        'HOST': config('DATABASE_HOST', default='localhost'),
-        'PORT': config('DATABASE_PORT', default='6543'),
-        'OPTIONS': {
-            'sslmode': 'require',
-        },
-        'DISABLE_SERVER_SIDE_CURSORS': True,
+        'ENGINE': 'app.core.db_backends.sqlcipher',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
 
@@ -249,26 +244,7 @@ if config('RENDER', default=False, cast=bool):
     ]
     if RENDER_EXTERNAL_URL:
         CORS_ALLOWED_ORIGINS.append(RENDER_EXTERNAL_URL)
-
-    # Render uses ephemeral filesystem — SQLite with WAL for max concurrency
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-            'OPTIONS': {
-                'timeout': 20,
-                'init_command': (
-                    'PRAGMA journal_mode=WAL;'
-                    'PRAGMA synchronous=NORMAL;'
-                    'PRAGMA cache_size=-32000;'
-                    'PRAGMA temp_store=MEMORY;'
-                    'PRAGMA mmap_size=536870912;'
-                    'PRAGMA foreign_keys=ON;'
-                    'PRAGMA wal_autocheckpoint=1000;'
-                ),
-            }
-        }
-    }
+    # SQLCipher backend handles all WAL/perf PRAGMAs automatically
 
 # These activate when ON_PYTHONANYWHERE=True is set in the server .env
 if config('ON_PYTHONANYWHERE', default=False, cast=bool):
@@ -285,27 +261,7 @@ if config('ON_PYTHONANYWHERE', default=False, cast=bool):
     ]
     STATIC_ROOT = BASE_DIR / 'staticfiles'
     MEDIA_ROOT = Path(f'/home/{PA_USERNAME}/main/media')
-
-    # PythonAnywhere free tier uses SQLite (external DB connections not allowed)
-    # WAL mode + PRAGMA tuning for maximum read throughput
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': Path(f'/home/{PA_USERNAME}/main/db.sqlite3'),
-            'OPTIONS': {
-                'timeout': 20,
-                'init_command': (
-                    'PRAGMA journal_mode=WAL;'       # concurrent reads + writes
-                    'PRAGMA synchronous=NORMAL;'     # safe but faster than FULL
-                    'PRAGMA cache_size=-32000;'      # 32MB page cache
-                    'PRAGMA temp_store=MEMORY;'      # temp tables in RAM
-                    'PRAGMA mmap_size=536870912;'    # 512MB memory-mapped I/O
-                    'PRAGMA foreign_keys=ON;'
-                    'PRAGMA wal_autocheckpoint=1000;'
-                ),
-            }
-        }
-    }
+    DATABASES['default']['NAME'] = Path(f'/home/{PA_USERNAME}/main/db.sqlite3')
 
     # Tighter cache on PA: use /home dir so it persists across reloads
     CACHES['default']['LOCATION'] = f'/home/{PA_USERNAME}/main/.cache'

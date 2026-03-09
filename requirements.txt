@@ -8,6 +8,6 @@ python-decouple==3.8
 requests==2.32.5
 Pillow
 drf-spectacular
-psycopg2-binary==2.9.10
+sqlcipher3
 gunicorn==25.1.0
 whitenoise==6.12.0
