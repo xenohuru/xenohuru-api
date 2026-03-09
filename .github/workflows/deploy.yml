@@ -1,0 +1,50 @@
+name: Deploy to PythonAnywhere
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy via PythonAnywhere API
+        env:
+          PA_API_TOKEN: ${{ secrets.PA_API_TOKEN }}
+          PA_USERNAME: xenohuru
+        run: |
+          # Create a bash console and get its ID
+          CONSOLE=$(curl -s --location \
+            --request POST "https://www.pythonanywhere.com/api/v0/user/${PA_USERNAME}/consoles/" \
+            --header "Authorization: Token ${PA_API_TOKEN}" \
+            --header "Content-Type: application/json" \
+            --data '{"executable": "bash", "arguments": "", "working_directory": "/home/xenohuru/xenohuru-api"}')
+
+          CONSOLE_ID=$(echo $CONSOLE | python3 -c "import sys, json; print(json.load(sys.stdin)['id'])")
+          echo "Console ID: $CONSOLE_ID"
+
+          # Wait for console to be ready
+          sleep 5
+
+          # Run deploy commands
+          DEPLOY_CMDS="cd /home/xenohuru/xenohuru-api && git pull origin main && source /home/xenohuru/.virtualenvs/xenohuru-venv/bin/activate && pip install -r requirements.txt --quiet && python src/manage.py migrate --no-input && python src/manage.py collectstatic --no-input --clear 2>&1 | tail -5 && echo 'DEPLOY_DONE'"
+
+          curl -s --location \
+            --request POST "https://www.pythonanywhere.com/api/v0/user/${PA_USERNAME}/consoles/${CONSOLE_ID}/send_input/" \
+            --header "Authorization: Token ${PA_API_TOKEN}" \
+            --header "Content-Type: application/json" \
+            --data "{\"input\": \"${DEPLOY_CMDS}\n\"}"
+
+          # Wait for commands to finish
+          sleep 30
+
+          # Reload the web app
+          RELOAD=$(curl -s --location \
+            --request POST "https://www.pythonanywhere.com/api/v0/user/${PA_USERNAME}/webapps/${PA_USERNAME}.pythonanywhere.com/reload/" \
+            --header "Authorization: Token ${PA_API_TOKEN}")
+
+          echo "Reload result: $RELOAD"
+          echo "Deployment complete!"

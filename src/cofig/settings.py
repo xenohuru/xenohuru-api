@@ -241,10 +241,16 @@ if config('RENDER', default=False, cast=bool):
 # These activate when ON_PYTHONANYWHERE=True is set in the server .env
 if config('ON_PYTHONANYWHERE', default=False, cast=bool):
     DEBUG = False
+    PA_USERNAME = config('PYTHONANYWHERE_USERNAME', default='xenohuru')
     ALLOWED_HOSTS = [
-        config('PYTHONANYWHERE_USERNAME', default='') + '.pythonanywhere.com',
-    ] + [h for h in ALLOWED_HOSTS if h not in ('', 'localhost', '127.0.0.1')]
-
+        f'{PA_USERNAME}.pythonanywhere.com',
+        'localhost',
+        '127.0.0.1',
+    ]
+    CORS_ALLOWED_ORIGINS = [
+        config('FRONTEND_URL', default='http://localhost:3000'),
+        f'https://{PA_USERNAME}.pythonanywhere.com',
+    ]
     STATIC_ROOT = BASE_DIR / 'staticfiles'
-    MEDIA_ROOT = Path.home() / config('PYTHONANYWHERE_USERNAME', default='app') / 'xenohuru-api' / 'media'
+    MEDIA_ROOT = Path(f'/home/{PA_USERNAME}/xenohuru-api/src/media')
 
