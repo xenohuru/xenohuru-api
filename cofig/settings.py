@@ -181,11 +181,12 @@ SIMPLE_JWT = {
 }
 
 # CORS Configuration
-CORS_ALLOWED_ORIGINS = [
-    config('FRONTEND_URL', default='http://localhost:3000'),
+_FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:3000')
+CORS_ALLOWED_ORIGINS = list(filter(None, [
+    _FRONTEND_URL,
     'http://localhost:8000',
     'http://127.0.0.1:8000',
-]
+]))
 
 CORS_ALLOW_CREDENTIALS = True
 
@@ -234,16 +235,15 @@ CONTACT_EMAIL = config('CONTACT_EMAIL', default='')  # Your personal email for n
 if config('RENDER', default=False, cast=bool):
     DEBUG = False
     RENDER_EXTERNAL_URL = config('RENDER_EXTERNAL_URL', default='')
-    ALLOWED_HOSTS = [
+    ALLOWED_HOSTS = list(filter(None, [
         config('RENDER_EXTERNAL_HOSTNAME', default=''),
         'localhost',
         '127.0.0.1',
-    ]
-    CORS_ALLOWED_ORIGINS = [
-        config('FRONTEND_URL', default='http://localhost:3000'),
-    ]
-    if RENDER_EXTERNAL_URL:
-        CORS_ALLOWED_ORIGINS.append(RENDER_EXTERNAL_URL)
+    ]))
+    CORS_ALLOWED_ORIGINS = list(filter(None, [
+        config('FRONTEND_URL', default=''),
+        RENDER_EXTERNAL_URL,
+    ]))
     # SQLCipher backend handles all WAL/perf PRAGMAs automatically
 
 # These activate when ON_PYTHONANYWHERE=True is set in the server .env
@@ -255,10 +255,10 @@ if config('ON_PYTHONANYWHERE', default=False, cast=bool):
         'localhost',
         '127.0.0.1',
     ]
-    CORS_ALLOWED_ORIGINS = [
-        config('FRONTEND_URL', default='http://localhost:3000'),
+    CORS_ALLOWED_ORIGINS = list(filter(None, [
+        config('FRONTEND_URL', default=''),
         f'https://{PA_USERNAME}.pythonanywhere.com',
-    ]
+    ]))
     STATIC_ROOT = BASE_DIR / 'staticfiles'
     MEDIA_ROOT = Path(f'/home/{PA_USERNAME}/main/media')
     DATABASES['default']['NAME'] = Path(f'/home/{PA_USERNAME}/main/chui.db')
