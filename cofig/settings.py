@@ -21,9 +21,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = config('SECRET_KEY', default='django-insecure-anhs7vhe#q35b4r2pg5zma4btgai+t@eem8vv4_7)*5$am+8_z')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = config('DEBUG', default=True, cast=bool)
+DEBUG = config('DEBUG', default=False, cast=bool)
 
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1').split(',')
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='*').split(',')
 
 
 # Application definition
@@ -68,10 +68,10 @@ INSTALLED_APPS = DEFAULT_APPS + THIRD_PARTY_APPS + CUSTOM_APPS
 AUTH_USER_MODEL = 'accounts.User'
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.middleware.gzip.GZipMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.cache.UpdateCacheMiddleware',       # must be before CommonMiddleware
     'django.middleware.common.CommonMiddleware',
@@ -182,12 +182,14 @@ SIMPLE_JWT = {
 }
 
 # CORS Configuration
-_FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:3000')
+_FRONTEND_URL = config('FRONTEND_URL', default='')
 CORS_ALLOWED_ORIGINS = list(filter(None, [
     _FRONTEND_URL,
     'http://localhost:8000',
     'http://127.0.0.1:8000',
 ]))
+# Allow all origins when no specific origins are configured (safe for public API)
+CORS_ALLOW_ALL_ORIGINS = not bool(_FRONTEND_URL)
 
 CORS_ALLOW_CREDENTIALS = True
 
