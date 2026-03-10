@@ -1,13 +1,15 @@
 #!/bin/bash
 set -e
 
-# If ON_BACK4APP is set, ensure /data/ exists and seed chui.db from the
-# committed copy at /app/chui.db (only on first deploy — never overwrites existing data)
-if [ "${ON_BACK4APP}" = "True" ] || [ "${ON_BACK4APP}" = "true" ] || [ "${ON_BACK4APP}" = "1" ]; then
-    mkdir -p /data
-    if [ ! -f /data/chui.db ]; then
+# Always ensure /data/ exists and seed chui.db on first deploy
+# (safe: only copies if /data/chui.db doesn't already exist)
+mkdir -p /data
+if [ ! -f /data/chui.db ]; then
+    if [ -f /app/chui.db ]; then
         echo "==> Seeding /data/chui.db from committed database..."
         cp /app/chui.db /data/chui.db
+    else
+        echo "==> WARNING: /app/chui.db not found — Django will create a fresh database."
     fi
 fi
 

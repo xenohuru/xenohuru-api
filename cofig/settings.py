@@ -263,8 +263,9 @@ if config('ON_BACK4APP', default=False, cast=bool):
         f'https://{B4A_HOSTNAME}' if B4A_HOSTNAME else '',
     ]))
     STATIC_ROOT = BASE_DIR / 'staticfiles'
-    # Database stored in /data so it survives container restarts (mount a volume to /data)
-    DATABASES['default']['NAME'] = Path('/data/chui.db')
+    # Use /data/chui.db (persistent volume) — fall back to /app/chui.db if /data/ not mounted
+    _b4a_db = Path('/data/chui.db') if Path('/data').exists() else BASE_DIR / 'chui.db'
+    DATABASES['default']['NAME'] = _b4a_db
 
 # These activate when ON_PYTHONANYWHERE=True is set in the server .env
 if config('ON_PYTHONANYWHERE', default=False, cast=bool):
