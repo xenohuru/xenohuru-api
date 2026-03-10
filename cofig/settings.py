@@ -266,9 +266,8 @@ if config('ON_BACK4APP', default=False, cast=bool):
     ]))
     CORS_ALLOW_ALL_ORIGINS = True   # public API — safe to allow all origins
     STATIC_ROOT = BASE_DIR / 'staticfiles'
-    # Use /data/chui.db (persistent volume) — fall back to /app/chui.db if /data/ not mounted
-    _b4a_db = Path('/data/chui.db') if Path('/data').exists() else BASE_DIR / 'chui.db'
-    DATABASES['default']['NAME'] = _b4a_db
+    # Use the committed chui.db baked into the Docker image — no volume needed
+    DATABASES['default']['NAME'] = BASE_DIR / 'chui.db'
 
 # These activate when ON_PYTHONANYWHERE=True is set in the server .env
 if config('ON_PYTHONANYWHERE', default=False, cast=bool):
