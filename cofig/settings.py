@@ -253,8 +253,10 @@ if config('RENDER', default=False, cast=bool):
 if config('ON_BACK4APP', default=False, cast=bool):
     DEBUG = False
     B4A_HOSTNAME = config('BACK4APP_HOSTNAME', default='')
+    # Allow all *.b4a.run subdomains + any explicitly configured hostname
     ALLOWED_HOSTS = list(filter(None, [
         B4A_HOSTNAME,
+        '.b4a.run',       # wildcard — covers all Back4App auto-generated URLs
         'localhost',
         '127.0.0.1',
     ]))
@@ -262,6 +264,7 @@ if config('ON_BACK4APP', default=False, cast=bool):
         config('FRONTEND_URL', default=''),
         f'https://{B4A_HOSTNAME}' if B4A_HOSTNAME else '',
     ]))
+    CORS_ALLOW_ALL_ORIGINS = True   # public API — safe to allow all origins
     STATIC_ROOT = BASE_DIR / 'staticfiles'
     # Use /data/chui.db (persistent volume) — fall back to /app/chui.db if /data/ not mounted
     _b4a_db = Path('/data/chui.db') if Path('/data').exists() else BASE_DIR / 'chui.db'
