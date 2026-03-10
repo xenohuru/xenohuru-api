@@ -17,3 +17,6 @@ copilot*.md
 copilot-*
 *copilot*
 utils/
+
+# Seed / data-import management commands (run locally, never commit)
+app/core/management/commands/seed_*.py
