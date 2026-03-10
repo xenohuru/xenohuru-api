@@ -7,32 +7,41 @@ ENV PYTHONDONTWRITEBYTECODE=1
 # Prevent buffering
 ENV PYTHONUNBUFFERED=1
 
+# Django settings module
+ENV DJANGO_SETTINGS_MODULE=cofig.settings
+
+# Default port (Back4App injects $PORT at runtime)
+ENV PORT=8000
+
 # Set work directory
 WORKDIR /app
 
-# Install system dependencies
+# Install system dependencies including SQLCipher for encrypted SQLite
 RUN apt-get update && apt-get install -y \
     build-essential \
-    libpq-dev \
     gcc \
+    libsqlcipher-dev \
+    sqlcipher \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements first (better caching)
+# Copy requirements first (better layer caching)
 COPY requirements.txt .
 
 # Install python dependencies
-RUN pip install --upgrade pip
-RUN pip install -r requirements.txt
+RUN pip install --upgrade pip && pip install -r requirements.txt
 
-# Copy project
+# Copy project files
 COPY . .
 
-# Collect static files
-RUN python manage.py collectstatic --noinput || true
+# Directory for static files (collected at runtime)
+RUN mkdir -p /app/staticfiles
 
-# Expose port
+# Copy and set up the runtime entrypoint
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+# Expose default port
 EXPOSE 8000
 
-# Start server
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "wsgi_config:application"]
+ENTRYPOINT ["/entrypoint.sh"]
 

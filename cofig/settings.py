@@ -247,6 +247,23 @@ if config('RENDER', default=False, cast=bool):
     ]))
     # SQLCipher backend handles all WAL/perf PRAGMAs automatically
 
+# These activate when ON_BACK4APP=True is set in Back4App environment variables
+if config('ON_BACK4APP', default=False, cast=bool):
+    DEBUG = False
+    B4A_HOSTNAME = config('BACK4APP_HOSTNAME', default='')
+    ALLOWED_HOSTS = list(filter(None, [
+        B4A_HOSTNAME,
+        'localhost',
+        '127.0.0.1',
+    ]))
+    CORS_ALLOWED_ORIGINS = list(filter(None, [
+        config('FRONTEND_URL', default=''),
+        f'https://{B4A_HOSTNAME}' if B4A_HOSTNAME else '',
+    ]))
+    STATIC_ROOT = BASE_DIR / 'staticfiles'
+    # Database stored in /data so it survives container restarts (mount a volume to /data)
+    DATABASES['default']['NAME'] = Path('/data/chui.db')
+
 # These activate when ON_PYTHONANYWHERE=True is set in the server .env
 if config('ON_PYTHONANYWHERE', default=False, cast=bool):
     DEBUG = False
