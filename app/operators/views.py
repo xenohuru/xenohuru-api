@@ -25,7 +25,7 @@ BASE_QUERYSET = TourOperator.objects.filter(is_active=True).prefetch_related('at
         '**POST** — Submit a new tour operator. Requires authentication.\n\n'
         '**curl GET example:**\n'
         '```bash\n'
-        'curl "https://cf89615f228bb45cc805447510de80.pythonanywhere.com/api/v1/operators/"\n'
+        'curl "https://xenohuru-o7ix53tg.b4a.run/api/v1/operators/"\n'
         '```'
     ),
     parameters=[
@@ -72,7 +72,7 @@ def operator_list_create(request):
         '- **DELETE** — Remove operator. Authentication required.\n\n'
         '**curl GET example:**\n'
         '```bash\n'
-        'curl https://cf89615f228bb45cc805447510de80.pythonanywhere.com/api/v1/operators/serengeti-adventures/\n'
+        'curl https://xenohuru-o7ix53tg.b4a.run/api/v1/operators/serengeti-adventures/\n'
         '```'
     ),
     responses={
@@ -111,7 +111,7 @@ def operator_detail(request, slug):
         'Returns all active, verified tour operators that cover the given attraction.\n\n'
         '**curl example:**\n'
         '```bash\n'
-        'curl "https://cf89615f228bb45cc805447510de80.pythonanywhere.com/api/v1/operators/by_attraction/?attraction=mount-kilimanjaro"\n'
+        'curl "https://xenohuru-o7ix53tg.b4a.run/api/v1/operators/by_attraction/?attraction=mount-kilimanjaro"\n'
         '```'
     ),
     parameters=[

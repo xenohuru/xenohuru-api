@@ -29,15 +29,18 @@ BASE_QUERYSET = Attraction.objects.filter(is_active=True).select_related('region
         '| Parameter | Type | Description |\n'
         '|-----------|------|-------------|\n'
         '| `search` | string | Filter by name, description, short description, or region name |\n'
+        '| `category` | string | Filter by category (e.g. `mountain`, `national_park`, `wildlife`, `beach`, `cultural`) |\n'
+        '| `region` | string | Filter by region slug (e.g. `arusha`, `kilimanjaro`) |\n'
+        '| `difficulty` | string | Filter by difficulty level (e.g. `easy`, `moderate`, `challenging`, `extreme`) |\n'
         '| `ordering` | string | Sort by any field. Prefix with `-` for descending (e.g. `-created_at`) |\n\n'
         '**POST** — Create a new attraction. Requires authentication.\n\n'
         '**curl GET example:**\n'
         '```bash\n'
-        'curl "https://cf89615f228bb45cc805447510de80.pythonanywhere.com/api/v1/attractions/?search=kilimanjaro"\n'
+        'curl "https://xenohuru-o7ix53tg.b4a.run/api/v1/attractions/?search=kilimanjaro"\n'
         '```\n\n'
         '**curl POST example:**\n'
         '```bash\n'
-        'curl -X POST https://cf89615f228bb45cc805447510de80.pythonanywhere.com/api/v1/attractions/ \\\n'
+        'curl -X POST https://xenohuru-o7ix53tg.b4a.run/api/v1/attractions/ \\\n'
         '  -H "Authorization: Bearer <access_token>" \\\n'
         '  -H "Content-Type: application/json" \\\n'
         '  -d \'{"name":"Ngorongoro Crater","slug":"ngorongoro-crater","region":1,"category":"wildlife",'
@@ -49,6 +52,9 @@ BASE_QUERYSET = Attraction.objects.filter(is_active=True).select_related('region
     ),
     parameters=[
         OpenApiParameter('search', description='Filter by name, description, short description or region', required=False, type=str),
+        OpenApiParameter('category', description='Filter by category slug (e.g. mountain, national_park, wildlife, beach, cultural)', required=False, type=str),
+        OpenApiParameter('region', description='Filter by region slug (e.g. arusha, kilimanjaro)', required=False, type=str),
+        OpenApiParameter('difficulty', description='Filter by difficulty level (easy, moderate, challenging, extreme)', required=False, type=str),
         OpenApiParameter('ordering', description='Sort results by field. Prefix with `-` for descending (e.g. `name`, `-created_at`)', required=False, type=str),
     ],
     request=AttractionCreateUpdateSerializer,
@@ -90,7 +96,10 @@ def attraction_list_create(request):
         search = request.query_params.get('search', '')
         ordering = request.query_params.get('ordering', '')
         page = request.query_params.get('page', '1')
-        cache_key = f'attractions_list_{search}_{ordering}_{page}'
+        category = request.query_params.get('category', '')
+        region = request.query_params.get('region', '')
+        difficulty = request.query_params.get('difficulty', '')
+        cache_key = f'attractions_list_{search}_{ordering}_{page}_{category}_{region}_{difficulty}'
         cached = cache.get(cache_key)
         if cached:
             return Response(cached)
@@ -101,6 +110,12 @@ def attraction_list_create(request):
                           attractions.filter(description__icontains=search) | \
                           attractions.filter(short_description__icontains=search) | \
                           attractions.filter(region__name__icontains=search)
+        if category:
+            attractions = attractions.filter(category=category)
+        if region:
+            attractions = attractions.filter(region__slug=region)
+        if difficulty:
+            attractions = attractions.filter(difficulty_level=difficulty)
         if ordering:
             attractions = attractions.order_by(ordering)
         serializer = AttractionListSerializer(attractions, many=True)
@@ -124,11 +139,11 @@ def attraction_list_create(request):
         '- **DELETE** — Remove the attraction. Authentication required.\n\n'
         '**curl GET example:**\n'
         '```bash\n'
-        'curl https://cf89615f228bb45cc805447510de80.pythonanywhere.com/api/v1/attractions/mount-kilimanjaro/\n'
+        'curl https://xenohuru-o7ix53tg.b4a.run/api/v1/attractions/mount-kilimanjaro/\n'
         '```\n\n'
         '**curl PATCH example:**\n'
         '```bash\n'
-        'curl -X PATCH https://cf89615f228bb45cc805447510de80.pythonanywhere.com/api/v1/attractions/mount-kilimanjaro/ \\\n'
+        'curl -X PATCH https://xenohuru-o7ix53tg.b4a.run/api/v1/attractions/mount-kilimanjaro/ \\\n'
         '  -H "Authorization: Bearer <access_token>" \\\n'
         '  -H "Content-Type: application/json" \\\n'
         '  -d \'{"entrance_fee":"80.00"}\'\n'
@@ -188,7 +203,7 @@ def attraction_detail(request, slug):
         'Results are cached in memory for **1 hour** — changes in the admin panel may take up to 1 hour to reflect here.\n\n'
         '**curl example:**\n'
         '```bash\n'
-        'curl https://cf89615f228bb45cc805447510de80.pythonanywhere.com/api/v1/attractions/featured/\n'
+        'curl https://xenohuru-o7ix53tg.b4a.run/api/v1/attractions/featured/\n'
         '```'
     ),
     responses={
@@ -219,7 +234,7 @@ def featured_attractions(request):
         '`adventure`, `national_park`, `island`, `waterfall`, `lake`, `other`\n\n'
         '**curl example:**\n'
         '```bash\n'
-        'curl "https://cf89615f228bb45cc805447510de80.pythonanywhere.com/api/v1/attractions/by_category/?category=national_park"\n'
+        'curl "https://xenohuru-o7ix53tg.b4a.run/api/v1/attractions/by_category/?category=national_park"\n'
         '```'
     ),
     parameters=[
@@ -262,7 +277,7 @@ def attractions_by_category(request):
         'Use `GET /api/v1/regions/` to list all available region slugs.\n\n'
         '**curl example:**\n'
         '```bash\n'
-        'curl "https://cf89615f228bb45cc805447510de80.pythonanywhere.com/api/v1/attractions/by_region/?region=arusha"\n'
+        'curl "https://xenohuru-o7ix53tg.b4a.run/api/v1/attractions/by_region/?region=arusha"\n'
         '```'
     ),
     parameters=[
@@ -303,7 +318,7 @@ def attractions_by_region(request):
         'Returns all endemic species recorded at the given attraction.\n\n'
         '**curl example:**\n'
         '```bash\n'
-        'curl https://cf89615f228bb45cc805447510de80.pythonanywhere.com/api/v1/attractions/serengeti/endemic-species/\n'
+        'curl https://xenohuru-o7ix53tg.b4a.run/api/v1/attractions/serengeti/endemic-species/\n'
         '```'
     ),
     responses={

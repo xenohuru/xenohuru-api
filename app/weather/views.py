@@ -40,7 +40,7 @@ _FORECAST_EXAMPLE = {
         'For live weather data use `GET /api/v1/weather/current/` instead.\n\n'
         '**curl example:**\n'
         '```bash\n'
-        'curl https://cf89615f228bb45cc805447510de80.pythonanywhere.com/api/v1/weather/\n'
+        'curl https://xenohuru-o7ix53tg.b4a.run/api/v1/weather/\n'
         '```'
     ),
     responses={
@@ -72,7 +72,7 @@ def weather_list(request):
         'To find the IDs, call `GET /api/v1/weather/` first.\n\n'
         '**curl example:**\n'
         '```bash\n'
-        'curl https://cf89615f228bb45cc805447510de80.pythonanywhere.com/api/v1/weather/1/\n'
+        'curl https://xenohuru-o7ix53tg.b4a.run/api/v1/weather/1/\n'
         '```'
     ),
     responses={
@@ -117,11 +117,11 @@ def weather_detail(request, pk):
         '`45/48`=Fog, `51-55`=Drizzle, `61-65`=Rain, `80-82`=Rain showers, `95`=Thunderstorm.\n\n'
         '**curl example (by coordinates):**\n'
         '```bash\n'
-        'curl "https://cf89615f228bb45cc805447510de80.pythonanywhere.com/api/v1/weather/current/?lat=-3.0674&lon=37.3556"\n'
+        'curl "https://xenohuru-o7ix53tg.b4a.run/api/v1/weather/current/?lat=-3.0674&lon=37.3556"\n'
         '```\n\n'
         '**curl example (by attraction slug):**\n'
         '```bash\n'
-        'curl "https://cf89615f228bb45cc805447510de80.pythonanywhere.com/api/v1/weather/current/?attraction=mount-kilimanjaro"\n'
+        'curl "https://xenohuru-o7ix53tg.b4a.run/api/v1/weather/current/?attraction=mount-kilimanjaro"\n'
         '```'
     ),
     parameters=[
@@ -193,11 +193,11 @@ def current_weather(request):
         'Use the optional `days` parameter to control the forecast window (default: 7, max: 16).\n\n'
         '**curl example (7-day forecast by attraction):**\n'
         '```bash\n'
-        'curl "https://cf89615f228bb45cc805447510de80.pythonanywhere.com/api/v1/weather/forecast/?attraction=mount-kilimanjaro&days=7"\n'
+        'curl "https://xenohuru-o7ix53tg.b4a.run/api/v1/weather/forecast/?attraction=mount-kilimanjaro&days=7"\n'
         '```\n\n'
         '**curl example (3-day forecast by coordinates):**\n'
         '```bash\n'
-        'curl "https://cf89615f228bb45cc805447510de80.pythonanywhere.com/api/v1/weather/forecast/?lat=-3.0674&lon=37.3556&days=3"\n'
+        'curl "https://xenohuru-o7ix53tg.b4a.run/api/v1/weather/forecast/?lat=-3.0674&lon=37.3556&days=3"\n'
         '```'
     ),
     parameters=[
@@ -269,7 +269,7 @@ def forecast_weather(request):
         '- **Long rains** (`long_rain`) — March–May\n\n'
         '**curl example:**\n'
         '```bash\n'
-        'curl "https://cf89615f228bb45cc805447510de80.pythonanywhere.com/api/v1/weather/seasonal/?attraction=mount-kilimanjaro"\n'
+        'curl "https://xenohuru-o7ix53tg.b4a.run/api/v1/weather/seasonal/?attraction=mount-kilimanjaro"\n'
         '```'
     ),
     parameters=[
